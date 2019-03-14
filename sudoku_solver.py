@@ -1,4 +1,8 @@
-#TODO: Build some sort of front-end thing that allows me to enter the sudoku like an actual sudoku instead of a nigh incomprehensible string
+#TODO: Figure out what I need to change to allow it to solve the HARD sudoku
+
+EASY = '000013259001725000235000000000167400230400106016020007000381900843070012700040800'
+MEDIUM = '073000100000002006060050200600000000007010000045806000000000045300500070080009320'
+HARD = '080000000020100000560007000050007090090800010408003050204060000000085200800000100'
 
 class Cell(object):
 
@@ -15,6 +19,12 @@ class Cell(object):
             self.value = n
             self.possible = []
 
+    def __str__(self):
+        res = self.name
+        if self.value:
+            res+=','+str(self.value)
+        return res
+
 class Solver(object):
     '''game layout:
     A1 A2 A3 | B1 B2 B3 | C1 C2 C3
@@ -28,11 +38,9 @@ class Solver(object):
     G1 G2 G3 | H1 H2 H3 | I1 I2 I3
     G4 G5 G6 | H4 H5 H6 | I4 I5 I6
     G7 G8 G9 | H7 H8 H9 | I7 I8 I9
-
     Rows labelled R1-R9 from top to bottom
     Columns labelled L1-L9 from left to right
     Boxes labeled A-I as above
-
     Cell values entered into the solver in box order 1-9
     '''
     def __init__(self, game):
@@ -165,6 +173,57 @@ class Solver(object):
             if not cell.value:
                 return False
         return True
+
+    def inRowOrColInBox(self, box):
+        topRow = [box[0],box[1],box[2]]
+        midRow = [box[3],box[4],box[5]]
+        botRow = [box[6],box[7],box[8]]
+        leftCol = [box[0],box[3],box[6]]
+        midCol = [box[1],box[4],box[7]]
+        rightCol = [box[2],box[5],box[8]]
+        boxRows = [topRow,midRow,botRow]
+        boxCols = [leftCol,midCol,rightCol]
+        topRowPos = []
+        midRowPos = []
+        botRowPos = []
+        leftColPos = []
+        midColPos = []
+        rightColPos = []
+        boxRowPos = [topRowPos,midRowPos,botRowPos]
+        boxColPos = [leftColPos,midColPos,rightColPos]
+        for i in range(3):
+            for cell in boxRows[i]:
+                boxRowPos[i].extend(cell.possible)
+            for cell in boxCols[i]:
+                boxColPos[i].extend(cell.possible)
+        for i in range(1,10):
+            ic = 0
+            for rp in boxRowPos:
+                if i in rp:
+                    ic+=1
+            if ic == 1:
+                for j in range(3):
+                    if i in boxRowPos[j]:
+                        c = boxRows[j][0]
+                        for row in self.rows:
+                            if c in row:
+                                for cell in row:
+                                    if cell not in box:
+                                        cell.removePossibility(i)
+            ic = 0
+            for cp in boxColPos:
+                if i in cp:
+                    ic+=1
+            if ic == 1:
+                for j in range(3):
+                    if i in boxColPos[j]:
+                        c = boxCols[j][0]
+                        for col in self.cols:
+                            if c in col:
+                                for cell in col:
+                                    if cell not in box:
+                                        cell.removePossibility(i)
+
 
     def setUpSolve(self):
         for i in range(81):
@@ -303,11 +362,23 @@ class Solver(object):
                                     if cell in xbox:
                                         for c in xbox:
                                             c.removePossibility(j)
+                self.inRowOrColInBox(box)
+
         res = ''
         for cell in self.cells:
             res+=str(cell.value)
         return res
 
+    def __str__(self):
+        res = ''
+        for row in self.rows:
+            for cell in row:
+                if cell.value:
+                    res+=str(cell.value)
+                else:
+                    res+='_'
+            res+='\n'
+        return res
 
 #sudoku = Solver('000000703007200000000405920001370200806000405003084600094802000000004600706000000')
 
