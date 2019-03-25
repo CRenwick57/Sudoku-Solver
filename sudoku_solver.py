@@ -1,6 +1,6 @@
-#TODO: Figure out what I need to change to allow it to solve the HARD sudoku
+#TODO: Implement some sort of method for solving X-Wing like formations
 
-EASY = '000013259001725000235000000000167400230400106016020007000381900843070012700040800'
+EASY = '704000000053407200600305970000500498045630000791400500016859240000020360047006000'
 MEDIUM = '073000100000002006060050200600000000007010000045806000000000045300500070080009320'
 HARD = '080000000020100000560007000050007090090800010408003050204060000000085200800000100'
 
@@ -13,6 +13,14 @@ class Cell(object):
     def removePossibility(self, n):
         if not self.value and n in self.possible:
             self.possible.remove(n)
+
+    def setPossible(self, n):
+        if not self.value:
+            self.possible = [n]
+
+    def addPossible(self,n):
+        if not self.value and n not in self.possible:
+            self.possible.append(n)
 
     def setValue(self, n):
         if not self.value:
@@ -224,6 +232,87 @@ class Solver(object):
                                     if cell not in box:
                                         cell.removePossibility(i)
 
+    def inBoxInRow(self, row):
+        leftBox = [row[0],row[1],row[2]]
+        midBox = [row[3],row[4],row[5]]
+        rightBox = [row[6],row[7],row[8]]
+        rowBoxes = [leftBox,midBox,rightBox]
+        leftBoxPos = []
+        midBoxPos = []
+        rightBoxPos = []
+        rowBoxPos = [leftBoxPos,midBoxPos,rightBoxPos]
+        for i in range(3):
+            for cell in rowBoxes[i]:
+                rowBoxPos[i].extend(cell.possible)
+        for i in range(1,10):
+            ic = 0
+            for bp in rowBoxPos:
+                if i in bp:
+                    ic+=1
+            if ic == 1:
+                for j in range(3):
+                    if i in rowBoxPos[j]:
+                        c = rowBoxes[j][0]
+                        for box in self.boxes:
+                            if c in box:
+                                for cell in box:
+                                    if cell not in row:
+                                        cell.removePossibility(i)
+
+    def inBoxInCol(self,col):
+        leftBox = [col[0],col[1],col[2]]
+        midBox = [col[3],col[4],col[5]]
+        rightBox = [col[6],col[7],col[8]]
+        colBoxes = [leftBox,midBox,rightBox]
+        leftBoxPos = []
+        midBoxPos = []
+        rightBoxPos = []
+        colBoxPos = [leftBoxPos,midBoxPos,rightBoxPos]
+        for i in range(3):
+            for cell in colBoxes[i]:
+                colBoxPos[i].extend(cell.possible)
+        for i in range(1,10):
+            ic = 0
+            for bp in colBoxPos:
+                if i in bp:
+                    ic+=1
+            if ic == 1:
+                for j in range(3):
+                    if i in colBoxPos[j]:
+                        c = colBoxes[j][0]
+                        for box in self.boxes:
+                            if c in box:
+                                for cell in box:
+                                    if cell not in col:
+                                        cell.removePossibility(i)
+
+    def checkPairs(self, brc):
+        possible = []
+        for cell in brc:
+            possible.extend(cell.possible)
+        potentials = []
+        for i in range(1,10):
+            if possible.count(i) == 2:
+                potentials.append(i)
+        pairs = []
+        for p in potentials:
+            pair = []
+            for cell in brc:
+                if p in cell.possible:
+                    pair.append(cell)
+            pairs.append(pair)
+        truePairs = {}
+        for i in range(len(pairs)):
+            if pairs.count(pairs[i]) == 2:
+                if tuple(pairs[i]) in truePairs:
+                    truePairs[tuple(pairs[i])].append(potentials[i])
+                else:
+                    truePairs[tuple(pairs[i])] = [potentials[i]]
+        for k,v in truePairs.items():
+            for cell in k:
+                for i in range(1,10):
+                    if i not in v:
+                        cell.removePossibility(i)
 
     def setUpSolve(self):
         for i in range(81):
@@ -284,6 +373,8 @@ class Solver(object):
                                     if cell in xbox:
                                         for c in xbox:
                                             c.removePossibility(j)
+                self.inBoxInRow(row)
+                self.checkPairs(row)
             for col in self.cols:
                 pCount = [0,0,0,0,0,0,0,0,0]
                 for cell in col:
@@ -323,6 +414,8 @@ class Solver(object):
                                     if cell in xbox:
                                         for c in xbox:
                                             c.removePossibility(j)
+                self.inBoxInCol(col)
+                self.checkPairs(col)
             for box in self.boxes:
                 pCount = [0,0,0,0,0,0,0,0,0]
                 for cell in box:
@@ -363,6 +456,7 @@ class Solver(object):
                                         for c in xbox:
                                             c.removePossibility(j)
                 self.inRowOrColInBox(box)
+                self.checkPairs(box)
 
         res = ''
         for cell in self.cells:
