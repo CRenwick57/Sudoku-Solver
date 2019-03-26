@@ -1,11 +1,11 @@
-#TODO: Add a front end so I don't have to painstakingly type out an entire 81 character string every time
+#TODO: Add method for detecting hidden triples
 
 from datetime import datetime
 
 EASY = '704000000053407200600305970000500498045630000791400500016859240000020360047006000'
 MEDIUM = '073000100000002006060050200600000000007010000045806000000000045300500070080009320'
 HARD = '080000000020100000560007000050007090090800010408003050204060000000085200800000100'
-VHARD = '600040002090007800007100050800000030000070000090000008050004900002500030300020004'
+VHARD = '000410050000500090000700801600809070040010000003400200000000003000100702308000060'
 
 class Cell(object):
 
@@ -501,7 +501,7 @@ class Solver(object):
                                             c.removePossibility(j)
                 self.inRowOrColInBox(box)
                 self.checkPairs(box)
-            timeOut = (datetime.now()-startTime).seconds >= 30
+            timeOut = (datetime.now()-startTime).seconds >= 10
         if timeOut:
             return 'Solver Timed out'
         res = ''
@@ -522,8 +522,15 @@ class Solver(object):
 
 #sudoku = Solver('000000703007200000000405920001370200806000405003084600094802000000004600706000000')
 
-#sudoku in this function should be a string like in the commented example above
+#sudoku in these functions should be a string like in the commented example above
+def solveSudoku(sudoku):
+    #function used by web app
+    solver = Solver(sudoku)
+    res = solver.solve()
+    return res
+
 def solveFormatted(sudoku):
+    #function used in console code
     solver = Solver(sudoku)
     res = solver.solve()
     if res == 'Solver Timed out':
@@ -541,3 +548,4 @@ def solveFormatted(sudoku):
     r9 = res[60]+res[61]+res[62]+'|'+res[69]+res[70]+res[71]+'|'+res[78]+res[79]+res[80]
     s = r1+r2+r3+lb+r4+r5+r6+lb+r7+r8+r9
     return s
+
