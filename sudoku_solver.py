@@ -1,4 +1,4 @@
-#TODO: Implement some sort of method for solving X-Wing like formations
+#TODO: Add a front end so I don't have to painstakingly type out an entire 81 character string every time
 
 EASY = '704000000053407200600305970000500498045630000791400500016859240000020360047006000'
 MEDIUM = '073000100000002006060050200600000000007010000045806000000000045300500070080009320'
@@ -13,14 +13,6 @@ class Cell(object):
     def removePossibility(self, n):
         if not self.value and n in self.possible:
             self.possible.remove(n)
-
-    def setPossible(self, n):
-        if not self.value:
-            self.possible = [n]
-
-    def addPossible(self,n):
-        if not self.value and n not in self.possible:
-            self.possible.append(n)
 
     def setValue(self, n):
         if not self.value:
@@ -314,6 +306,51 @@ class Solver(object):
                     if i not in v:
                         cell.removePossibility(i)
 
+    def xWing(self, rc, ROW=True):
+        possible = []
+        for cell in rc:
+            possible.extend(cell.possible)
+        pairs = []
+        for i in range(1,10):
+            if possible.count(i) == 2:
+                pairs.append(i)
+        pairDict = {}
+        for p in pairs:
+            pairDict[p] = []
+            for i in range(9):
+                if p in rc[i].possible:
+                    pairDict[p].append(i)
+        if ROW:
+            for num,cells in pairDict.items():
+                for row in self.rows:
+                    if row != rc:
+                        rowPoss = []
+                        for cell in row:
+                            rowPoss.extend(cell.possible)
+                        if rowPoss.count(num) == 2:
+                            if num in row[cells[0]].possible and num in row[cells[1]].possible:
+                                markedCells = [rc[cells[0]],rc[cells[1]],row[cells[0]],row[cells[1]]]
+                                for col in self.cols:
+                                    if markedCells[0] in col or markedCells[1] in col:
+                                        for cell in col:
+                                            if cell not in markedCells:
+                                                cell.removePossibility(num)
+        else:
+            for num,cells in pairDict.items():
+                for col in self.cols:
+                    if col != rc:
+                        colPoss = []
+                        for cell in col:
+                            colPoss.extend(cell.possible)
+                        if colPoss.count(num) == 2:
+                            if num in col[cells[0]].possible and num in col[cells[1]].possible:
+                                markedCells = [rc[cells[0]],rc[cells[1]],col[cells[0]],col[cells[1]]]
+                                for row in self.rows:
+                                    if markedCells[0] in row or markedCells[1] in row:
+                                        for cell in row:
+                                            if cell not in markedCells:
+                                                cell.removePossibility(num)
+
     def setUpSolve(self):
         for i in range(81):
             if self.game[i] != '0':
@@ -375,6 +412,7 @@ class Solver(object):
                                             c.removePossibility(j)
                 self.inBoxInRow(row)
                 self.checkPairs(row)
+                self.xWing(row,True)
             for col in self.cols:
                 pCount = [0,0,0,0,0,0,0,0,0]
                 for cell in col:
@@ -416,6 +454,7 @@ class Solver(object):
                                             c.removePossibility(j)
                 self.inBoxInCol(col)
                 self.checkPairs(col)
+                self.xWing(col,False)
             for box in self.boxes:
                 pCount = [0,0,0,0,0,0,0,0,0]
                 for cell in box:
