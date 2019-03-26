@@ -1,8 +1,11 @@
 #TODO: Add a front end so I don't have to painstakingly type out an entire 81 character string every time
 
+from datetime import datetime
+
 EASY = '704000000053407200600305970000500498045630000791400500016859240000020360047006000'
 MEDIUM = '073000100000002006060050200600000000007010000045806000000000045300500070080009320'
 HARD = '080000000020100000560007000050007090090800010408003050204060000000085200800000100'
+VHARD = '600040002090007800007100050800000030000070000090000008050004900002500030300020004'
 
 class Cell(object):
 
@@ -370,7 +373,9 @@ class Solver(object):
 
     def solve(self):
         self.setUpSolve()
-        while not self.checkSolved():
+        startTime = datetime.now()
+        timeOut = False
+        while not self.checkSolved() and not timeOut:
             for row in self.rows:
                 pCount = [0,0,0,0,0,0,0,0,0]
                 for cell in row:
@@ -496,7 +501,9 @@ class Solver(object):
                                             c.removePossibility(j)
                 self.inRowOrColInBox(box)
                 self.checkPairs(box)
-
+            timeOut = (datetime.now()-startTime).seconds >= 30
+        if timeOut:
+            return 'Solver Timed out'
         res = ''
         for cell in self.cells:
             res+=str(cell.value)
@@ -519,6 +526,8 @@ class Solver(object):
 def solveFormatted(sudoku):
     solver = Solver(sudoku)
     res = solver.solve()
+    if res == 'Solver Timed out':
+        return res
     r1 = res[0]+res[1]+res[2]+'|'+res[9]+res[10]+res[11]+'|'+res[18]+res[19]+res[20]+'\n'
     r2 = res[3]+res[4]+res[5]+'|'+res[12]+res[13]+res[14]+'|'+res[21]+res[22]+res[23]+'\n'
     r3 = res[6]+res[7]+res[8]+'|'+res[15]+res[16]+res[17]+'|'+res[24]+res[25]+res[26]+'\n'
