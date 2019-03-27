@@ -1,5 +1,3 @@
-#TODO: Add method for detecting hidden triples
-
 from datetime import datetime
 
 EASY = '704000000053407200600305970000500498045630000791400500016859240000020360047006000'
@@ -12,6 +10,7 @@ class Cell(object):
     def __init__(self, value = None):
         self.value = value
         self.possible = [1,2,3,4,5,6,7,8,9]
+        self.lastGuess = -1
 
     def removePossibility(self, n):
         if not self.value and n in self.possible:
@@ -21,6 +20,9 @@ class Cell(object):
         if not self.value:
             self.value = n
             self.possible = []
+
+    def guessValue(self, n=None):
+        self.value = n
 
     def __str__(self):
         res = self.name
@@ -501,9 +503,66 @@ class Solver(object):
                                             c.removePossibility(j)
                 self.inRowOrColInBox(box)
                 self.checkPairs(box)
-            timeOut = (datetime.now()-startTime).seconds >= 10
+            timeOut = (datetime.now()-startTime).seconds >= 3
         if timeOut:
-            return 'Solver Timed out'
+            return self.bruteForce()
+        res = ''
+        for cell in self.cells:
+            res+=str(cell.value)
+        return res
+
+    def validate(self):
+        for row in self.rows:
+            values = []
+            for cell in row:
+                if cell.value:
+                    values.append(cell.value)
+                else:
+                    values.append(0)
+            for i in range(1,10):
+                if values.count(i) > 1:
+                    return False
+        for col in self.cols:
+            values = []
+            for cell in col:
+                if cell.value:
+                    values.append(cell.value)
+                else:
+                    values.append(0)
+            for i in range(1,10):
+                if values.count(i) > 1:
+                    return False
+        for box in self.boxes:
+            values = []
+            for cell in box:
+                if cell.value:
+                    values.append(cell.value)
+                else:
+                    values.append(0)
+            for i in range(1,10):
+                if values.count(i) > 1:
+                    return False
+        return True
+
+    def iterateCell(self, i, toGuess):
+        j = toGuess[i]
+        for guess in self.cells[j].possible:
+            self.cells[j].guessValue(guess)
+            if self.validate():
+                if i == len(toGuess)-1:
+                    return True
+                elif self.iterateCell(i+1, toGuess):
+                    return True
+        self.cells[j].guessValue(None)
+        return False
+
+    def bruteForce(self):
+        toGuess = []
+        for i in range(81):
+            if not self.cells[i].value:
+                toGuess.append(i)
+        i = 0
+        self.iterateCell(0,toGuess)
         res = ''
         for cell in self.cells:
             res+=str(cell.value)
